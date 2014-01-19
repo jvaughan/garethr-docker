@@ -19,7 +19,9 @@
 define docker::image(
   $ensure    = 'present',
   $image     = $title,
-  $image_tag = undef
+  $image_tag = undef,
+  $build_from_dockerfile  = false,
+  $dockerfile_dir         = undef
 ) {
 
   validate_re($ensure, '^(present|absent)$')
@@ -42,10 +44,17 @@ define docker::image(
       timeout => 0,
     }
   } else {
-    exec { $image_install:
-      path    => ['/bin', '/usr/bin'],
-      unless  => $image_find,
-      timeout => 0,
+    if $build_from_dockerfile {
+      docker::build { $image:
+        image_tag       => $image_tag,
+        dockerfile_dir  => $dockerfile_dir
+      }
+    } else {
+      exec { $image_install:
+        path    => ['/bin', '/usr/bin'],
+        unless  => $image_find,
+        timeout => 0,
+      }
     }
   }
 }
